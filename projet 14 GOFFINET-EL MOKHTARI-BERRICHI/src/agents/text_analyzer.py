@@ -208,6 +208,10 @@ class TextAnalyzerAgent:
         tel_match = re.search(r'(?:téléphone|tel|phone)[\s:]*([0-9\s\-\.]{10,})', text, re.IGNORECASE)
         telephone = tel_match.group(1).strip() if tel_match else None
         
+        # Extraire le poste
+        poste_match = re.search(r'Poste\s*:\s*([^\n]+)', text, re.IGNORECASE)
+        poste = poste_match.group(1).strip() if poste_match else None
+        
         # Extraire les expériences (lignes après "expérience")
         experiences = []
         exp_section = False
@@ -244,6 +248,9 @@ class TextAnalyzerAgent:
                 continue
             if comp_section and line:
                 if not line.startswith('-'):
+                    # Vérifier si la ligne contient "COMPÉTENCES" en majuscules
+                    if 'COMPÉTENCES' in line:
+                        continue
                     # Diviser par virgules
                     competences.extend([comp.strip() for comp in line.split(',') if comp.strip()])
                 else:
@@ -251,7 +258,8 @@ class TextAnalyzerAgent:
             elif comp_section and any(keyword in line.lower() for keyword in ['langue', 'centre', 'intérêt']):
                 break
         
-        return {
+        # Créer la structure de retour
+        result = {
             "nom": nom,
             "email": email,
             "telephone": telephone,
@@ -259,6 +267,12 @@ class TextAnalyzerAgent:
             "formations": formations,
             "competences": competences
         }
+        
+        # Ajouter le poste s'il est trouvé
+        if poste:
+            result["poste"] = poste
+            
+        return result
     
     def _extract_facture_offline(self, text: str) -> dict:
         """Extraction hors ligne pour facture"""

@@ -12,6 +12,7 @@ class CVData:
     email: Optional[str] = None
     telephone: Optional[str] = None
     adresse: Optional[str] = None
+    poste: Optional[str] = None
     experiences: List[str] = None
     formations: List[str] = None
     competences: List[str] = None

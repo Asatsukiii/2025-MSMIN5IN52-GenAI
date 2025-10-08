@@ -92,7 +92,7 @@ class PDFGeneratorAgent:
     
     def _generate_cv_pdf(self, cv_data: CVData, output_path: str) -> str:
         """Génère un PDF pour un CV"""
-        doc = SimpleDocTemplate(output_path, pagesize=A4, 
+        doc = SimpleDocTemplate(output_path, pagesize=A4,
                                rightMargin=72, leftMargin=72,
                                topMargin=72, bottomMargin=72)
         
@@ -118,15 +118,22 @@ class PDFGeneratorAgent:
             story.append(contact_para)
             story.append(Spacer(1, 20))
         
+        # Poste (si disponible)
+        if cv_data.poste:
+            poste_para = Paragraph(f"<b>POSTE:</b> {cv_data.poste}", self.custom_styles['Body'])
+            story.append(poste_para)
+            story.append(Spacer(1, 12))
+        
         # Expériences professionnelles
         if cv_data.experiences:
             header = Paragraph("EXPÉRIENCES PROFESSIONNELLES", self.custom_styles['Header'])
             story.append(header)
             
             for exp in cv_data.experiences:
-                exp_para = Paragraph(exp, self.custom_styles['Body'])
-                story.append(exp_para)
-                story.append(Spacer(1, 6))
+                if exp.strip():  # Vérifier que l'expérience n'est pas vide
+                    exp_para = Paragraph(exp.strip(), self.custom_styles['Body'])
+                    story.append(exp_para)
+                    story.append(Spacer(1, 6))
             
             story.append(Spacer(1, 12))
         
@@ -136,9 +143,10 @@ class PDFGeneratorAgent:
             story.append(header)
             
             for formation in cv_data.formations:
-                formation_para = Paragraph(formation, self.custom_styles['Body'])
-                story.append(formation_para)
-                story.append(Spacer(1, 6))
+                if formation.strip():  # Vérifier que la formation n'est pas vide
+                    formation_para = Paragraph(formation.strip(), self.custom_styles['Body'])
+                    story.append(formation_para)
+                    story.append(Spacer(1, 6))
             
             story.append(Spacer(1, 12))
         
@@ -147,9 +155,13 @@ class PDFGeneratorAgent:
             header = Paragraph("COMPÉTENCES", self.custom_styles['Header'])
             story.append(header)
             
-            skills_text = ", ".join(cv_data.competences)
-            skills_para = Paragraph(skills_text, self.custom_styles['Body'])
-            story.append(skills_para)
+            # Ajouter chaque compétence comme un paragraphe séparé
+            for competence in cv_data.competences:
+                if competence.strip():  # Vérifier que la compétence n'est pas vide
+                    competence_para = Paragraph(competence.strip(), self.custom_styles['Body'])
+                    story.append(competence_para)
+                    story.append(Spacer(1, 6))
+            
             story.append(Spacer(1, 12))
         
         # Générer le PDF

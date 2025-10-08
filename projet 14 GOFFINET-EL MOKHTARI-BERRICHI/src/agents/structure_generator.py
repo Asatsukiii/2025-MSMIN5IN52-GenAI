@@ -43,32 +43,57 @@ class StructureGeneratorAgent:
             telephone = raw_data.get("telephone")
             adresse = raw_data.get("adresse")
             
+            # Extraire le poste
+            poste = raw_data.get("poste")
+            if not poste:
+                # Vérifier les variations possibles
+                for key in ["poste", "Poste", "POSTE", "position", "Position", "POSITION"]:
+                    if key in raw_data:
+                        poste = raw_data[key]
+                        break
+            
             # Extraire les expériences professionnelles
             experiences = []
             if "experiences" in raw_data:
-                experiences = raw_data["experiences"]
+                experiences = [exp for exp in raw_data["experiences"] if exp and exp.strip()]
             elif "experience" in raw_data:
-                experiences = raw_data["experience"]
+                experiences = [exp for exp in raw_data["experience"] if exp and exp.strip()]
             elif "experiences_professionnelles" in raw_data:
-                experiences = raw_data["experiences_professionnelles"]
+                experiences = [exp for exp in raw_data["experiences_professionnelles"] if exp and exp.strip()]
+            elif "expériences" in raw_data:
+                experiences = [exp for exp in raw_data["expériences"] if exp and exp.strip()]
+            elif "expérience" in raw_data:
+                experiences = [exp for exp in raw_data["expérience"] if exp and exp.strip()]
+            elif "expériences_professionnelles" in raw_data:
+                experiences = [exp for exp in raw_data["expériences_professionnelles"] if exp and exp.strip()]
                 
             # Extraire les formations
             formations = []
             if "formations" in raw_data:
-                formations = raw_data["formations"]
+                formations = [form for form in raw_data["formations"] if form and form.strip()]
             elif "formation" in raw_data:
-                formations = raw_data["formation"]
+                formations = [form for form in raw_data["formation"] if form and form.strip()]
             elif "formations_academiques" in raw_data:
-                formations = raw_data["formations_academiques"]
+                formations = [form for form in raw_data["formations_academiques"] if form and form.strip()]
+            elif "formations" in raw_data:
+                formations = [form for form in raw_data["formations"] if form and form.strip()]
+            elif "formation" in raw_data:
+                formations = [form for form in raw_data["formation"] if form and form.strip()]
+            elif "formations_academiques" in raw_data:
+                formations = [form for form in raw_data["formations_academiques"] if form and form.strip()]
                 
             # Extraire les compétences
             competences = []
             if "competences" in raw_data:
-                competences = raw_data["competences"]
+                competences = [comp for comp in raw_data["competences"] if comp and comp.strip()]
             elif "competence" in raw_data:
-                competences = raw_data["competence"]
+                competences = [comp for comp in raw_data["competence"] if comp and comp.strip()]
             elif "skills" in raw_data:
-                competences = raw_data["skills"]
+                competences = [comp for comp in raw_data["skills"] if comp and comp.strip()]
+            elif "compétences" in raw_data:
+                competences = [comp for comp in raw_data["compétences"] if comp and comp.strip()]
+            elif "compétence" in raw_data:
+                competences = [comp for comp in raw_data["compétence"] if comp and comp.strip()]
                 
             return CVData(
                 nom=nom,
@@ -77,7 +102,8 @@ class StructureGeneratorAgent:
                 adresse=adresse,
                 experiences=experiences,
                 formations=formations,
-                competences=competences
+                competences=competences,
+                poste=poste
             )
             
         except Exception as e:

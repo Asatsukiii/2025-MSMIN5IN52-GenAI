@@ -149,6 +149,57 @@ TVA (20%): 1 254,00 €
 Montant total TTC: 7 524,00 €
 """
 
+# Fonctions pour les tests individuels
+async def test_cv_simple():
+    """Teste la génération d'un CV simple"""
+    try:
+        from src.orchestrator import generate_document_from_text
+        cv_path = await generate_document_from_text(cv_text, "output/test_cv_simple.pdf")
+        return cv_path
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        return None
+
+async def test_cv_complexe():
+    """Teste la génération d'un CV complexe"""
+    try:
+        from src.orchestrator import generate_document_from_text
+        cv_path = await generate_document_from_text(complex_cv_text, "output/test_cv_complexe.pdf")
+        return cv_path
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        return None
+
+async def test_facture_simple():
+    """Teste la génération d'une facture simple"""
+    try:
+        from src.orchestrator import generate_document_from_text
+        invoice_path = await generate_document_from_text(invoice_text, "output/test_facture_simple.pdf")
+        return invoice_path
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        return None
+
+async def test_facture_detaillée():
+    """Teste la génération d'une facture détaillée"""
+    try:
+        from src.orchestrator import generate_document_from_text
+        invoice_path = await generate_document_from_text(detailed_invoice_text, "output/test_facture_detaillée.pdf")
+        return invoice_path
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        return None
+
+async def test_rapport_simple():
+    """Teste la génération d'un rapport simple"""
+    try:
+        from src.orchestrator import generate_document_from_text
+        report_path = await generate_document_from_text(report_text, "output/test_rapport_simple.pdf")
+        return report_path
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        return None
+
 async def test_document_generation():
     """Teste la génération de différents types de documents"""
     try:
