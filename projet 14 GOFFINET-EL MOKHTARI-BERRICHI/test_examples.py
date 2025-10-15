@@ -150,52 +150,52 @@ Montant total TTC: 7 524,00 €
 """
 
 # Fonctions pour les tests individuels
-async def test_cv_simple():
+async def test_cv_simple(output_path=None):
     """Teste la génération d'un CV simple"""
     try:
         from src.orchestrator import generate_document_from_text
-        cv_path = await generate_document_from_text(cv_text, "output/test_cv_simple.pdf")
-        return cv_path
+        pdf_path = await generate_document_from_text(cv_text, output_path or "output/test_cv_simple.pdf")
+        return pdf_path
     except Exception as e:
         print(f"❌ Erreur: {e}")
         return None
 
-async def test_cv_complexe():
+async def test_cv_complexe(output_path=None):
     """Teste la génération d'un CV complexe"""
     try:
         from src.orchestrator import generate_document_from_text
-        cv_path = await generate_document_from_text(complex_cv_text, "output/test_cv_complexe.pdf")
-        return cv_path
+        pdf_path = await generate_document_from_text(complex_cv_text, output_path or "output/test_cv_complexe.pdf")
+        return pdf_path
     except Exception as e:
         print(f"❌ Erreur: {e}")
         return None
 
-async def test_facture_simple():
+async def test_facture_simple(output_path=None):
     """Teste la génération d'une facture simple"""
     try:
         from src.orchestrator import generate_document_from_text
-        invoice_path = await generate_document_from_text(invoice_text, "output/test_facture_simple.pdf")
-        return invoice_path
+        pdf_path = await generate_document_from_text(invoice_text, output_path or "output/test_facture_simple.pdf")
+        return pdf_path
     except Exception as e:
         print(f"❌ Erreur: {e}")
         return None
 
-async def test_facture_detaillée():
+async def test_facture_detaillée(output_path=None):
     """Teste la génération d'une facture détaillée"""
     try:
         from src.orchestrator import generate_document_from_text
-        invoice_path = await generate_document_from_text(detailed_invoice_text, "output/test_facture_detaillée.pdf")
-        return invoice_path
+        pdf_path = await generate_document_from_text(detailed_invoice_text, output_path or "output/test_facture_detaillée.pdf")
+        return pdf_path
     except Exception as e:
         print(f"❌ Erreur: {e}")
         return None
 
-async def test_rapport_simple():
+async def test_rapport_simple(output_path=None):
     """Teste la génération d'un rapport simple"""
     try:
         from src.orchestrator import generate_document_from_text
-        report_path = await generate_document_from_text(report_text, "output/test_rapport_simple.pdf")
-        return report_path
+        pdf_path = await generate_document_from_text(report_text, output_path or "output/test_rapport_simple.pdf")
+        return pdf_path
     except Exception as e:
         print(f"❌ Erreur: {e}")
         return None

@@ -5,57 +5,64 @@ import os
 from typing import Any
 import asyncio
 from datetime import datetime
-from .agents.text_analyzer import TextAnalyzerAgent
+from .agents.text_analyzer import TextAnalyzerAgentOnline
 from .agents.structure_generator import StructureGeneratorAgent
 from .agents.pdf_generator import PDFGeneratorAgent
 from .models import ExtractedData
 
 class DocumentOrchestrator:
     """Agent orchestrateur qui coordonne le workflow complet"""
-    
     def __init__(self):
-        self.text_analyzer = TextAnalyzerAgent()
+        self.text_analyzer = TextAnalyzerAgentOnline()
         self.structure_generator = StructureGeneratorAgent()
         self.pdf_generator = PDFGeneratorAgent()
+    
+    
     
     async def generate_document(self, input_text: str, output_path: str = None) -> str:
         """
         Génère un document structuré à partir d'un texte en langage naturel
-        
+
         Args:
             input_text: Texte en langage naturel décrivant le document à générer
             output_path: Chemin de sortie pour le PDF (optionnel)
-            
+
         Returns:
             Chemin du fichier PDF généré
         """
         # Étape 1: Analyse du texte
         print("Analyse du texte d'entrée...")
         extracted_data = await self.text_analyzer.analyze_text(input_text)
-        
-        print(f"Document identifié comme: {extracted_data.document_type.upper()} (confiance: {extracted_data.confidence_score:.2f})")
-        
+
+        print(f"Document identifié comme: {extracted_data.document_type.upper()} "
+            f"(confiance: {extracted_data.confidence_score:.2f})")
+
         # Étape 2: Génération de la structure
         print("Génération de la structure de document...")
         structured_data = self.structure_generator.generate_structure(extracted_data)
-        
+
+        # Si c'est un dict, convertir en texte JSON pour le PDF
+        if isinstance(structured_data, dict):
+            import json
+            structured_data = json.dumps(structured_data, indent=2, ensure_ascii=False)
+
         # Étape 3: Génération du PDF
         print("Génération du document PDF...")
-        
+
         # Déterminer le nom de fichier de sortie si non fourni
         if not output_path:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             doc_type = extracted_data.document_type.lower()
             output_path = f"output/{doc_type}_{timestamp}.pdf"
-        
+
         # Créer le répertoire de sortie si nécessaire
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
+
         # Générer le PDF
         pdf_path = self.pdf_generator.generate_pdf(structured_data, output_path)
-        
+
         print(f"Document généré avec succès: {pdf_path}")
-        
+
         return pdf_path
 
 # Fonction utilitaire pour une utilisation simple

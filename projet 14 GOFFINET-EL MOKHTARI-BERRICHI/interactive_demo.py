@@ -84,6 +84,8 @@ async def process_manual_input():
 
 def main():
     """Fonction principale"""
+    output_dir = os.path.join(os.path.dirname(__file__), "output")
+    os.makedirs(output_dir, exist_ok=True)
     while True:
         print_header()
         print_menu()
@@ -99,40 +101,60 @@ def main():
                 from test_examples import test_cv_simple
                 print("\n🚀 Génération du CV simple...")
                 import asyncio
-                asyncio.run(test_cv_simple())
-                print("✅ CV simple généré: output/test_cv_simple.pdf")
+                asyncio.run(test_cv_simple(output_path=os.path.join(output_dir, "test_cv_simple.pdf")))
+                print(f"✅ CV simple généré: {os.path.join('output', 'test_cv_simple.pdf')}")
                 
             elif choice == '2':
                 from test_examples import test_cv_complexe
                 print("\n🚀 Génération du CV complexe...")
                 import asyncio
-                asyncio.run(test_cv_complexe())
-                print("✅ CV complexe généré: output/test_cv_complexe.pdf")
+                asyncio.run(test_cv_complexe(output_path=os.path.join(output_dir, "test_cv_complexe.pdf")))
+                print(f"✅ CV complexe généré: {os.path.join('output', 'test_cv_complexe.pdf')}")
                 
             elif choice == '3':
                 from test_examples import test_facture_simple
                 print("\n🚀 Génération de la facture simple...")
                 import asyncio
-                asyncio.run(test_facture_simple())
-                print("✅ Facture simple générée: output/test_facture_simple.pdf")
+                asyncio.run(test_facture_simple(output_path=os.path.join(output_dir, "test_facture_simple.pdf")))
+                print(f"✅ Facture simple générée: {os.path.join('output', 'test_facture_simple.pdf')}")
                 
             elif choice == '4':
                 from test_examples import test_facture_detaillée
                 print("\n🚀 Génération de la facture détaillée...")
                 import asyncio
-                asyncio.run(test_facture_detaillée())
-                print("✅ Facture détaillée générée: output/test_facture_detaillée.pdf")
+                asyncio.run(test_facture_detaillée(output_path=os.path.join(output_dir, "test_facture_detaillée.pdf")))
+                print(f"✅ Facture détaillée générée: {os.path.join('output', 'test_facture_detaillée.pdf')}")
                 
             elif choice == '5':
                 from test_examples import test_rapport_simple
                 print("\n🚀 Génération du rapport simple...")
                 import asyncio
-                asyncio.run(test_rapport_simple())
-                print("✅ Rapport simple généré: output/test_rapport_simple.pdf")
+                asyncio.run(test_rapport_simple(output_path=os.path.join(output_dir, "test_rapport_simple.pdf")))
+                print(f"✅ Rapport simple généré: {os.path.join('output', 'test_rapport_simple.pdf')}")
                 
             elif choice == '6':
                 import asyncio
-                asyncio.run(process_manual_input())
+                async def process_manual_input_with_output():
+                    text = get_user_text()
+                    if not text.strip():
+                        print("❌ Aucun texte saisi.")
+                        return
+                    print("\n🔍 Analyse en cours...")
+                    orchestrator = DocumentOrchestrator()
+                    try:
+                        extracted_data = await orchestrator.text_analyzer.analyze_text(text)
+                        document_type = extracted_data.document_type
+                        confidence = extracted_data.confidence_score
+                        print(f"✅ Type détecté: {document_type.upper()} (confiance: {confidence:.0%})")
+                        output_path = os.path.join(output_dir, f"manual_{document_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+                        pdf_path = await generate_document_from_text(text, output_path)
+                        if pdf_path:
+                            print(f"🎉 Document généré avec succès: {pdf_path}")
+                        else:
+                            print("❌ Échec de la génération du document")
+                    except Exception as e:
+                        print(f"❌ Erreur: {e}")
+                asyncio.run(process_manual_input_with_output())
                 
             else:
                 print("\n❌ Choix invalide. Veuillez choisir entre 1 et 7.")

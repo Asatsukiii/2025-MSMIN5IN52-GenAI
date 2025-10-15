@@ -35,13 +35,24 @@ class FactureData:
     services: List[dict] = None  # [{"description": str, "quantite": int, "prix_unitaire": float}]
     montant_total: float = 0.0
     tva: float = 20.0  # % de TVA par défaut
+    fournisseur: Optional[str] = None
+    email_fournisseur: Optional[str] = None
+    date_emission: Optional[str] = None
+    date_echeance: Optional[str] = None
+    total_ttc: Optional[float] = None
+    conditions: Optional[str] = None
+    mentions_legales: Optional[str] = None
+    remarques: Optional[str] = None
     
     def __post_init__(self):
         if self.services is None:
             self.services = []
         if self.montant_total == 0.0 and self.services:
             # Calculer le montant total automatiquement
-            self.montant_total = sum(service['quantite'] * service['prix_unitaire'] for service in self.services)
+            self.montant_total = sum(
+                service.get('quantite', 1) * service.get('prix_unitaire', 0.0)
+                for service in self.services if isinstance(service, dict)
+            )
 
 @dataclass
 class RapportData:

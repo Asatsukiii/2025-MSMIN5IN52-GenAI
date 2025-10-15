@@ -33,68 +33,51 @@ class StructureGeneratorAgent:
             return self._generate_report_structure(extracted_data.data)
     
     def _generate_cv_structure(self, raw_data: Dict[str, Any]) -> CVData:
-        """Génère la structure pour un CV"""
+        """Génère la structure pour un CV de manière robuste"""
         try:
-            # Extraire les informations de base
+            def _extract_list(raw_data: dict, possible_keys: list) -> list:
+                """Retourne la première liste trouvée parmi les clés possibles"""
+                for key in possible_keys:
+                    if key in raw_data and isinstance(raw_data[key], list):
+                        return [item for item in raw_data[key] if item]
+                return []
+
+            # Informations de base
             nom = raw_data.get("nom", "Nom non spécifié")
-            
-            # Extraire les informations de contact
             email = raw_data.get("email")
-            telephone = raw_data.get("telephone")
+            telephone = raw_data.get("telephone") or raw_data.get("téléphone")
             adresse = raw_data.get("adresse")
-            
-            # Extraire le poste
-            poste = raw_data.get("poste")
-            if not poste:
-                # Vérifier les variations possibles
-                for key in ["poste", "Poste", "POSTE", "position", "Position", "POSITION"]:
-                    if key in raw_data:
-                        poste = raw_data[key]
-                        break
-            
-            # Extraire les expériences professionnelles
-            experiences = []
-            if "experiences" in raw_data:
-                experiences = [exp for exp in raw_data["experiences"] if exp and exp.strip()]
-            elif "experience" in raw_data:
-                experiences = [exp for exp in raw_data["experience"] if exp and exp.strip()]
-            elif "experiences_professionnelles" in raw_data:
-                experiences = [exp for exp in raw_data["experiences_professionnelles"] if exp and exp.strip()]
-            elif "expériences" in raw_data:
-                experiences = [exp for exp in raw_data["expériences"] if exp and exp.strip()]
-            elif "expérience" in raw_data:
-                experiences = [exp for exp in raw_data["expérience"] if exp and exp.strip()]
-            elif "expériences_professionnelles" in raw_data:
-                experiences = [exp for exp in raw_data["expériences_professionnelles"] if exp and exp.strip()]
-                
-            # Extraire les formations
-            formations = []
-            if "formations" in raw_data:
-                formations = [form for form in raw_data["formations"] if form and form.strip()]
-            elif "formation" in raw_data:
-                formations = [form for form in raw_data["formation"] if form and form.strip()]
-            elif "formations_academiques" in raw_data:
-                formations = [form for form in raw_data["formations_academiques"] if form and form.strip()]
-            elif "formations" in raw_data:
-                formations = [form for form in raw_data["formations"] if form and form.strip()]
-            elif "formation" in raw_data:
-                formations = [form for form in raw_data["formation"] if form and form.strip()]
-            elif "formations_academiques" in raw_data:
-                formations = [form for form in raw_data["formations_academiques"] if form and form.strip()]
-                
-            # Extraire les compétences
-            competences = []
-            if "competences" in raw_data:
-                competences = [comp for comp in raw_data["competences"] if comp and comp.strip()]
-            elif "competence" in raw_data:
-                competences = [comp for comp in raw_data["competence"] if comp and comp.strip()]
-            elif "skills" in raw_data:
-                competences = [comp for comp in raw_data["skills"] if comp and comp.strip()]
-            elif "compétences" in raw_data:
-                competences = [comp for comp in raw_data["compétences"] if comp and comp.strip()]
-            elif "compétence" in raw_data:
-                competences = [comp for comp in raw_data["compétence"] if comp and comp.strip()]
-                
+
+            # Poste éventuel
+            poste = raw_data.get("poste") or raw_data.get("position")
+
+            # Listes extraites
+            experiences = _extract_list(
+                raw_data,
+                ["experiences", "experience", "experiences_professionnelles", "expériences", "expérience"]
+            )
+            formations = _extract_list(
+                raw_data,
+                ["formations", "formation", "formations_academiques"]
+            )
+            competences = _extract_list(
+                raw_data,
+                ["competences", "competence", "skills", "compétences", "compétence"]
+            )
+
+            # 🔹 Transformer dicts en texte pour le PDF
+            experiences = [
+                f"{e.get('poste', '')} chez {e.get('entreprise', '')} ({e.get('période', '')})"
+                if isinstance(e, dict) else str(e)
+                for e in experiences
+            ]
+            formations = [
+                f"{f.get('diplôme', '')}, {f.get('lieu', f.get('établissement', ''))} ({f.get('année', '')})"
+                if isinstance(f, dict) else str(f)
+                for f in formations
+            ]
+            competences = [str(c) for c in competences if str(c).strip()]
+
             return CVData(
                 nom=nom,
                 email=email,
@@ -105,47 +88,56 @@ class StructureGeneratorAgent:
                 competences=competences,
                 poste=poste
             )
-            
+
         except Exception as e:
             print(f"Erreur lors de la génération de la structure CV: {e}")
-            # Retourner une structure minimale
             return CVData(nom="Nom non spécifié")
+
+
     
     def _generate_invoice_structure(self, raw_data: Dict[str, Any]) -> FactureData:
         """Génère la structure pour une facture"""
         try:
-            # Extraire les informations de base
-            numero_facture = raw_data.get("numero_facture", "FACT-001")
-            
-            # Extraire la date
+            numero_facture = raw_data.get("numero_facture") or raw_data.get("numéro") or "FACT-001"
             date_str = raw_data.get("date")
             if date_str:
                 try:
                     date = datetime.fromisoformat(date_str)
                 except:
-                    date = datetime.now()
+                    try:
+                        date = datetime.strptime(date_str, "%d/%m/%Y")
+                    except:
+                        date = datetime.now()
             else:
                 date = datetime.now()
-                
-            # Extraire les informations du client
-            client_nom = raw_data.get("client_nom", "Client non spécifié")
-            client_adresse = raw_data.get("client_adresse")
-            
-            # Extraire les services
-            services = []
-            if "services" in raw_data:
-                services = raw_data["services"]
-            elif "produits" in raw_data:
-                services = raw_data["produits"]
-            elif "items" in raw_data:
-                services = raw_data["items"]
-                
-            # Extraire le montant total
+
+            client_nom = raw_data.get("client_nom") or raw_data.get("client") or "Client non spécifié"
+            client_adresse = raw_data.get("client_adresse") or raw_data.get("adresse")
+            fournisseur = raw_data.get("fournisseur")
+            email_fournisseur = raw_data.get("email_fournisseur")
+            date_emission = raw_data.get("date_emission")
+            date_echeance = raw_data.get("date_echeance")
+
+            services = raw_data.get("services") or raw_data.get("produits") or raw_data.get("items") or []
+            # Si services est une chaîne, essayer de parser en liste
+            if isinstance(services, str):
+                services = [services]
+
             montant_total = raw_data.get("montant_total", 0.0)
-            
-            # Extraire la TVA
+            # Si montant_total absent, le calculer à partir des services
+            if not montant_total and services:
+                montant_total = sum(
+                    s.get("quantite", 1) * s.get("prix_unitaire", 0.0)
+                    for s in services if isinstance(s, dict)
+                )
+
             tva = raw_data.get("tva", 20.0)
-            
+            total_ttc = raw_data.get("total_ttc")
+            conditions = raw_data.get("conditions")
+            mentions_legales = raw_data.get("mentions_legales")
+            remarques = raw_data.get("remarques")
+
+            # Adapter ici selon la définition de FactureData (ajouter les champs si besoin)
             return FactureData(
                 numero_facture=numero_facture,
                 date=date,
@@ -153,12 +145,18 @@ class StructureGeneratorAgent:
                 client_adresse=client_adresse,
                 services=services,
                 montant_total=montant_total,
-                tva=tva
+                tva=tva,
+                fournisseur=fournisseur,
+                email_fournisseur=email_fournisseur,
+                date_emission=date_emission,
+                date_echeance=date_echeance,
+                total_ttc=total_ttc,
+                conditions=conditions,
+                mentions_legales=mentions_legales,
+                remarques=remarques
             )
-            
         except Exception as e:
             print(f"Erreur lors de la génération de la structure facture: {e}")
-            # Retourner une structure minimale
             return FactureData(
                 numero_facture="FACT-001",
                 date=datetime.now(),

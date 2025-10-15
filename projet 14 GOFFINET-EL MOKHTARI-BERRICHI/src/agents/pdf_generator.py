@@ -173,22 +173,23 @@ class PDFGeneratorAgent:
         doc = SimpleDocTemplate(output_path, pagesize=letter,
                                rightMargin=72, leftMargin=72,
                                topMargin=72, bottomMargin=72)
-        
+
         story = []
-        
+
         # En-tête
         title = Paragraph("FACTURE", self.custom_styles['Title'])
         story.append(title)
         story.append(Spacer(1, 20))
-        
+
         # Informations de la facture
         invoice_info = [
-            [Paragraph("<b>Numéro de facture:</b>", self.custom_styles['Body']), 
-             Paragraph(invoice_data.numero_facture, self.custom_styles['Body'])],
-            [Paragraph("<b>Date:</b>", self.custom_styles['Body']), 
-             Paragraph(invoice_data.date.strftime("%d/%m/%Y"), self.custom_styles['Body'])]
+            [Paragraph("<b>Numéro de facture:</b>", self.custom_styles['Body']),
+             Paragraph(str(getattr(invoice_data, "numero_facture", "Non spécifié")), self.custom_styles['Body'])],
+            [Paragraph("<b>Date d'émission:</b>", self.custom_styles['Body']),
+             Paragraph(str(getattr(invoice_data, "date_emission", "") or invoice_data.date.strftime("%d/%m/%Y")), self.custom_styles['Body'])],
+            [Paragraph("<b>Date d'échéance:</b>", self.custom_styles['Body']),
+             Paragraph(str(getattr(invoice_data, "date_echeance", "Non spécifié")), self.custom_styles['Body'])]
         ]
-        
         invoice_table = Table(invoice_info, colWidths=[150, 300])
         invoice_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -196,54 +197,61 @@ class PDFGeneratorAgent:
         ]))
         story.append(invoice_table)
         story.append(Spacer(1, 20))
-        
-        # Informations du client
-        if invoice_data.client_nom or invoice_data.client_adresse:
-            client_header = Paragraph("CLIENT", self.custom_styles['Subtitle'])
-            story.append(client_header)
-            
-            client_info = []
-            if invoice_data.client_nom:
-                client_info.append([Paragraph("<b>Nom:</b>", self.custom_styles['Body']), 
-                                  Paragraph(invoice_data.client_nom, self.custom_styles['Body'])])
-            if invoice_data.client_adresse:
-                client_info.append([Paragraph("<b>Adresse:</b>", self.custom_styles['Body']), 
-                                  Paragraph(invoice_data.client_adresse, self.custom_styles['Body'])])
-            
-            client_table = Table(client_info, colWidths=[150, 300])
-            client_table.setStyle(TableStyle([
+
+        # Informations du client et fournisseur
+        client_header = Paragraph("CLIENT", self.custom_styles['Subtitle'])
+        story.append(client_header)
+        client_info = [
+            [Paragraph("<b>Nom:</b>", self.custom_styles['Body']),
+             Paragraph(str(getattr(invoice_data, "client_nom", "Non spécifié")), self.custom_styles['Body'])]
+        ]
+        if getattr(invoice_data, "client_adresse", None):
+            client_info.append([Paragraph("<b>Adresse:</b>", self.custom_styles['Body']),
+                                Paragraph(str(invoice_data.client_adresse), self.custom_styles['Body'])])
+        client_table = Table(client_info, colWidths=[150, 300])
+        client_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(client_table)
+        story.append(Spacer(1, 10))
+
+        if getattr(invoice_data, "fournisseur", None):
+            fournisseur_header = Paragraph("FOURNISSEUR", self.custom_styles['Subtitle'])
+            story.append(fournisseur_header)
+            fournisseur_info = [
+                [Paragraph("<b>Nom:</b>", self.custom_styles['Body']),
+                 Paragraph(str(invoice_data.fournisseur), self.custom_styles['Body'])]
+            ]
+            if getattr(invoice_data, "email_fournisseur", None):
+                fournisseur_info.append([Paragraph("<b>Email:</b>", self.custom_styles['Body']),
+                                         Paragraph(str(invoice_data.email_fournisseur), self.custom_styles['Body'])])
+            fournisseur_table = Table(fournisseur_info, colWidths=[150, 300])
+            fournisseur_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ]))
-            story.append(client_table)
-            story.append(Spacer(1, 20))
-        
+            story.append(fournisseur_table)
+            story.append(Spacer(1, 10))
+
         # Détails des services
         if invoice_data.services:
             services_header = Paragraph("DÉTAILS DES SERVICES", self.custom_styles['Subtitle'])
             story.append(services_header)
-            
-            # Tableau des services
             service_data = [["Description", "Quantité", "Prix Unitaire", "Total"]]
-            
             for service in invoice_data.services:
-                description = service.get("description", "Service non spécifié")
-                quantite = service.get("quantite", 1)
-                prix_unitaire = service.get("prix_unitaire", 0.0)
+                description = service.get("description", "Service non spécifié") if isinstance(service, dict) else str(service)
+                quantite = service.get("quantite", 1) if isinstance(service, dict) else 1
+                prix_unitaire = service.get("prix_unitaire", 0.0) if isinstance(service, dict) else 0.0
                 total = quantite * prix_unitaire
-                
                 service_data.append([
                     Paragraph(description, self.custom_styles['Body']),
                     Paragraph(str(quantite), self.custom_styles['Body']),
                     Paragraph(f"{prix_unitaire:.2f} €", self.custom_styles['Body']),
                     Paragraph(f"{total:.2f} €", self.custom_styles['Body'])
                 ])
-            
-            # Créer le tableau
             col_widths = [250, 80, 100, 100]
             service_table = Table(service_data, colWidths=col_widths)
-            
-            # Style du tableau
             service_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -256,17 +264,18 @@ class PDFGeneratorAgent:
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
-            
             story.append(service_table)
             story.append(Spacer(1, 20))
-        
+
         # Total
+        montant_total = getattr(invoice_data, "montant_total", 0.0)
+        tva = getattr(invoice_data, "tva", 20.0)
+        total_ttc = getattr(invoice_data, "total_ttc", None)
         total_data = [
-            ["", "", "TOTAL HT:", Paragraph(f"{invoice_data.montant_total:.2f} €", self.custom_styles['Body'])],
-            ["", "", f"TVA ({invoice_data.tva}%)", Paragraph(f"{invoice_data.montant_total * invoice_data.tva / 100:.2f} €", self.custom_styles['Body'])],
-            ["", "", "TOTAL TTC:", Paragraph(f"{invoice_data.montant_total * (1 + invoice_data.tva / 100):.2f} €", self.custom_styles['Body'])]
+            ["", "", "TOTAL HT:", Paragraph(f"{montant_total:.2f} €", self.custom_styles['Body'])],
+            ["", "", f"TVA ({tva}%)", Paragraph(f"{montant_total * tva / 100:.2f} €", self.custom_styles['Body'])],
+            ["", "", "TOTAL TTC:", Paragraph(f"{total_ttc:.2f} €" if total_ttc else f"{montant_total * (1 + tva / 100):.2f} €", self.custom_styles['Body'])]
         ]
-        
         total_table = Table(total_data, colWidths=[250, 80, 100, 100])
         total_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -276,11 +285,33 @@ class PDFGeneratorAgent:
             ('TOPPADDING', (0, 0), (-1, -1), 6),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
-        
         story.append(total_table)
         story.append(Spacer(1, 20))
-        
-        # Générer le PDF
+
+        # Conditions de paiement
+        if getattr(invoice_data, "conditions", None):
+            conditions_header = Paragraph("CONDITIONS DE PAIEMENT", self.custom_styles['Header'])
+            story.append(conditions_header)
+            conditions_para = Paragraph(str(invoice_data.conditions), self.custom_styles['Body'])
+            story.append(conditions_para)
+            story.append(Spacer(1, 10))
+
+        # Mentions légales
+        if getattr(invoice_data, "mentions_legales", None):
+            mentions_header = Paragraph("MENTIONS LÉGALES", self.custom_styles['Header'])
+            story.append(mentions_header)
+            mentions_para = Paragraph(str(invoice_data.mentions_legales), self.custom_styles['Body'])
+            story.append(mentions_para)
+            story.append(Spacer(1, 10))
+
+        # Remarques
+        if getattr(invoice_data, "remarques", None):
+            remarques_header = Paragraph("REMARQUES", self.custom_styles['Header'])
+            story.append(remarques_header)
+            remarques_para = Paragraph(str(invoice_data.remarques), self.custom_styles['Body'])
+            story.append(remarques_para)
+            story.append(Spacer(1, 10))
+
         doc.build(story)
         return output_path
     
